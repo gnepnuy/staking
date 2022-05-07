@@ -1,15 +1,109 @@
-# Basic Sample Hardhat Project
+# FiexdDeposit.sol 接口文档
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+- FiexdDeposit.sol ABI：`./FiexdDeposit.json`
 
-Try running some of the following tasks:
+## 用户质押接口
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
+##### 方法名
+- deposit
+
+##### 参数
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|amount |是  |number |质押数量   |
+|duration |是  |number |质押周期   |
+
+
+
+
+##### 返回参数说明 
+
+|参数名|类型|说明|
+|:-----  |:-----|-----                           |
+无返回值
+
+##### 备注 
+
+- --
+
+
+## 延长质押接口
+
+##### 方法名
+- extension
+
+##### 参数
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|duration |是  |number |质押周期   |
+
+
+
+##### 返回参数说明 
+
+|参数名|类型|说明|
+|:-----  |:-----|-----                           |
+无返回值
+
+##### 备注 
+
+- --
+
+## 取消质押接口
+
+##### 方法名
+- withdrew
+
+##### 参数
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+不需要传参
+
+
+
+##### 返回参数说明 
+
+|参数名|类型|说明|
+|:-----  |:-----|-----                           |
+无返回值
+
+##### 备注 
+
+- --
+
+## 查询用户质押数据接口
+
+##### 方法名
+- viewDepositSlip
+
+##### 参数
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|user|是|string|用户地址|
+
+##### 返回示例
+``` 
+  [
+    0xf71A370D35F70E4467A90BC696D48e357bA91A46, //用户地址
+    10900000000000000000000, //质押数量
+    1651824960, //质押时间
+    1, //质押周期
+    30000, //年利率
+    0 //奖励数量
+  ]
 ```
+
+##### 返回参数说明 
+
+|参数名|类型|说明|
+|:-----  |:-----|-----                           |
+返回的数据类型为数组
+
+
+##### 备注 
+
+- --

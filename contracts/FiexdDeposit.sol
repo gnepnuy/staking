@@ -9,7 +9,7 @@ import './IERC20.sol';
   1，固定收益率
   2，到期后可以续存
   3，存款会有时间窗口
-  4，
+  4，提取收益将收取一定的手续费
 
  */
 contract FiexdDeposit is Durations{
@@ -18,7 +18,7 @@ contract FiexdDeposit is Durations{
 
   address public rewardToken;
 
-  //当前年利率（500/5%）
+  //当前年利率（50000/500%）
   uint256 public apr;
 
   uint256 public tradeFeeRate = 0;
@@ -29,6 +29,8 @@ contract FiexdDeposit is Durations{
   uint256 public endBlock;
 
   uint256 public yitian = 1 days;
+
+  uint256 public totalDeposit;
 
 
   mapping(address => DepositSlip) depositSlips;
@@ -86,18 +88,25 @@ contract FiexdDeposit is Durations{
     depositSlip.apr = apr;
     depositSlip.duration = duration;
     depositSlip.startTime = block.timestamp;
+    totalDeposit += amount;
     
     emit Deposit(depositSlip.user,amount,duration);
   }
 
   function _update(DepositSlip storage depositSlip) internal {
     if(depositSlip.balance > 0){
+      depositSlip.reward += _getReward(depositSlip);
+    }
+  }
+
+  function _getReward(DepositSlip memory depositSlip) internal view returns (uint256 reward) {
+    reward = 0;
+    if(depositSlip.balance > 0){
       //存在之前的质押，计算奖励
       uint256 rewardByDay = (depositSlip.balance * depositSlip.apr)/10000/365;
       uint256 depositDays = (block.timestamp - depositSlip.startTime)/yitian;
       depositDays = depositDays > depositSlip.duration ? depositSlip.duration : depositDays;
-      uint256 reward = rewardByDay * depositDays;
-      depositSlip.reward += reward;
+      reward = rewardByDay * depositDays;
     }
   }
 
@@ -148,6 +157,7 @@ contract FiexdDeposit is Durations{
     //修改存款单
     depositSlip.balance = 0;
     depositSlip.reward = 0;
+    totalDeposit -= balance;
     //提取奖励和本金
     if(depositToken == rewardToken){
       IERC20(depositToken).transfer(depositSlip.user, balance+reward);
@@ -161,7 +171,10 @@ contract FiexdDeposit is Durations{
 
 
   function viewDepositSlip(address user) external view returns(DepositSlip memory){
-    return depositSlips[user];
+    DepositSlip memory depositSlip = depositSlips[user];
+    depositSlip.reward += _getReward(depositSlip);
+
+    return depositSlip;
   }
 
 
@@ -182,9 +195,13 @@ contract FiexdDeposit is Durations{
 
   function updateDepositDate(uint256 _startBlock,uint256 _endBlock)external onlyOwner{
     require(_startBlock > block.number && _endBlock > _startBlock,'date is error');
-
     startBlock = _startBlock;
     endBlock = _endBlock;
+  }
+
+  function updateYiTian(uint256 _yitian) external onlyOwner{
+    require(_yitian != yitian,'no change');
+    yitian = _yitian;
   }
 
 
