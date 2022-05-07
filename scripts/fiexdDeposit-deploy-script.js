@@ -17,9 +17,9 @@ async function main() {
    */
   const depositToken = "0x9DbC65c84532f71e6DbB93B6842BF1Fd72109551";
   const rewardToken = "0x9DbC65c84532f71e6DbB93B6842BF1Fd72109551";
-  const apr = 500;
-  const startBlock = "19064080";
-  const endBlock = "19070593";
+  const apr = 50000;
+  const startBlock = "19092106";
+  const endBlock = "19095006";
   const durations = ["30","180","360"];
 
 
