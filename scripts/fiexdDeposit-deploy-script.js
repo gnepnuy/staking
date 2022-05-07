@@ -16,11 +16,11 @@ async function main() {
     uint256[] memory _durations
    */
   const depositToken = "0x9DbC65c84532f71e6DbB93B6842BF1Fd72109551";
-  const rewardToken = "0x9DbC65c84532f71e6DbB93B6842BF1Fd72109551";
+  const rewardToken = "0x56548eb590D2F67bE7F0395cadA3f4FffF6c730E";
   const apr = 50000;
-  const startBlock = "19092106";
-  const endBlock = "19095006";
-  const durations = ["30","180","360"];
+  const startBlock = "19094636";
+  const endBlock = "19097536";
+  const durations = ["30","180","360","10","5"];
 
 
   const fiexdDeposit = await FiexdDeposit.deploy(depositToken,rewardToken,apr,startBlock,endBlock,durations);

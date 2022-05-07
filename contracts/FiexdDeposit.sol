@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import './Durations.sol';
 import './IERC20.sol';
+import './INeptune.sol';
 
 /**
   定期存款合约
@@ -124,6 +125,7 @@ contract FiexdDeposit is Durations{
     //deposit
 
     //把奖励加到本金
+    INeptune(rewardToken).mint(address(this), depositSlip.reward);
     depositSlip.balance += depositSlip.reward;
     depositSlip.reward = 0;
     depositSlip.apr = apr;
@@ -159,12 +161,14 @@ contract FiexdDeposit is Durations{
     depositSlip.reward = 0;
     totalDeposit -= balance;
     //提取奖励和本金
-    if(depositToken == rewardToken){
-      IERC20(depositToken).transfer(depositSlip.user, balance+reward);
-    }else{
-      IERC20(depositToken).transfer(depositSlip.user, balance);
-      IERC20(rewardToken).transfer(depositSlip.user, reward);
-    }
+    INeptune(rewardToken).mint(depositSlip.user, reward);
+    IERC20(depositToken).transfer(depositSlip.user, balance);
+    // if(depositToken == rewardToken){
+    //   IERC20(depositToken).transfer(depositSlip.user, balance+reward);
+    // }else{
+    //   IERC20(depositToken).transfer(depositSlip.user, balance);
+    //   IERC20(rewardToken).transfer(depositSlip.user, reward);
+    // }
 
     emit Withdraw(depositSlip.user, balance, reward);
   }
