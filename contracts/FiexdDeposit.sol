@@ -17,8 +17,6 @@ contract FiexdDeposit is Durations{
 
   address public depositToken;
 
-  address public rewardToken;
-
   //当前年利率（50000/500%）
   uint256 public apr;
 
@@ -53,20 +51,18 @@ contract FiexdDeposit is Durations{
 
   constructor(
     address _depositToken,
-    address _rewardToken,
     uint256 _apr,
     uint256 _startBlock,
     uint256 _endBlock,
     uint256[] memory _durations
   ){
-    require(_depositToken != address(0) && _rewardToken != address(0),'token params error');
+    require(_depositToken != address(0),'token params error');
     require(_apr > 0,'interestRate params error');
     require(_startBlock > block.number,'startBlock params error');
     require(_endBlock > _startBlock, 'endBlock params error');
     require(_durations.length > 0,'durations params error');
 
     depositToken = _depositToken;
-    rewardToken =_rewardToken;
     apr = _apr;
     startBlock = _startBlock;
     endBlock = _endBlock;
@@ -82,8 +78,11 @@ contract FiexdDeposit is Durations{
     DepositSlip storage depositSlip =  depositSlips[_msgSender()];
     _update(depositSlip);
 
+    uint256 beforeBalance = IERC20(depositToken).balanceOf(address(this));
     IERC20(depositToken).transferFrom(_msgSender(), address(this), amount);
-
+    uint256 afterBalance = IERC20(depositToken).balanceOf(address(this));
+    amount = afterBalance - beforeBalance;
+    
     depositSlip.balance += amount;
     depositSlip.user = _msgSender();
     depositSlip.apr = apr;
@@ -125,7 +124,8 @@ contract FiexdDeposit is Durations{
     //deposit
 
     //把奖励加到本金
-    INeptune(rewardToken).mint(address(this), depositSlip.reward);
+    INeptune(depositToken).mint(address(this), depositSlip.reward);
+    totalDeposit +=depositSlip.reward;
     depositSlip.balance += depositSlip.reward;
     depositSlip.reward = 0;
     depositSlip.apr = apr;
@@ -161,15 +161,8 @@ contract FiexdDeposit is Durations{
     depositSlip.reward = 0;
     totalDeposit -= balance;
     //提取奖励和本金
-    INeptune(rewardToken).mint(depositSlip.user, reward);
+    INeptune(depositToken).mint(depositSlip.user, reward);
     IERC20(depositToken).transfer(depositSlip.user, balance);
-    // if(depositToken == rewardToken){
-    //   IERC20(depositToken).transfer(depositSlip.user, balance+reward);
-    // }else{
-    //   IERC20(depositToken).transfer(depositSlip.user, balance);
-    //   IERC20(rewardToken).transfer(depositSlip.user, reward);
-    // }
-
     emit Withdraw(depositSlip.user, balance, reward);
   }
 
