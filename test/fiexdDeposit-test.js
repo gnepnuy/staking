@@ -37,7 +37,7 @@ async function test(){
   const durationList = await fiexdDeposit.durationValues();
   console.log("durationList:",durationList);
 
-  //获取质押到期后继续质押的保护期
+  //获取质押到期后延长质押的保护期
   const protectionPeriod = await fiexdDeposit.protectionPeriod();
   console.log("protectionPeriod:",ethers.BigNumber.from(protectionPeriod).toNumber());
 
