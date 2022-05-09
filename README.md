@@ -1,6 +1,7 @@
 # FiexdDeposit.sol 接口文档
 
-- FiexdDeposit.sol ABI：`./FiexdDeposit.json`
+## JS代码示例：
+- `./test/fiexdDeposit-test.js`
 
 ## 用户质押接口
 
