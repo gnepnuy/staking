@@ -6,7 +6,7 @@ const IERC20Abi = require('../IERC20.json')
 
 //bsc_test
 const rpc_url = "https://data-seed-prebsc-2-s1.binance.org:8545/";
-const fiexdDeposit_address = "0xD5B93f5cc9751Fa84a31bcD152c33eb6BFa1f328";
+const fiexdDeposit_address = "0x0f4Ce30383cFc1A9e75Bf42954a6fa36F6b11b42";
 
 
 
@@ -51,11 +51,23 @@ async function test(){
 
   //获取用户质押数据
   const depositSlip = await fiexdDeposit.viewDepositSlip(wallet.address);
-  console.log("depositSlip:",JSON.stringify(depositSlip))
+  console.log("depositSlip.user:",depositSlip.user);
+  console.log("depositSlip.balance:",depositSlip.balance.toString());
+  console.log("depositSlip.startTime:",depositSlip.startTime.toString());
+  console.log("depositSlip.duration:",depositSlip.duration.toString());
+  console.log("depositSlip.apr:",depositSlip.apr.toString());
+  console.log("depositSlip.reward:",depositSlip.reward.toString());
+
 
   //获取单个周期的秒数
   const yitian = await fiexdDeposit.yitian();
   console.log('yitian:',BigNumber.from(yitian).toNumber());
+
+  //获取奖励解锁数据
+  const lockReward = await fiexdDeposit.viewLockReward(wallet.address);
+  console.log("viewLockReward.lockAmount:",lockReward.lockAmount.toString());
+  console.log("viewLockReward.unlockAmount:",lockReward.unlockAmount.toString());
+  console.log("viewLockReward.claimed:",lockReward.claimed.toString());
 
 
   //质押/增加质押
@@ -66,7 +78,7 @@ async function test(){
   // if(blockNumber > startBlock && blockNumber < endBlock){//当前是否开放质押
   //   console.log('blocknumber:',blockNumber);
   //   const amount = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));//质押数量
-  //   const duration = BigNumber.from(10);//质押周期
+  //   const duration = BigNumber.from(5);//质押周期
   //   if(amount.lte(allowance)){
   //     const depositTx = await fiexdDeposit.connect(wallet).deposit(amount,duration);
   //     console.log('depositTx:',depositTx.hash);
@@ -77,14 +89,19 @@ async function test(){
   //   }
   // }
 
+  //领取已释放的奖励
+  const claimTx = await fiexdDeposit.connect(wallet).claim();
+  console.log("claimTx:",claimTx.hash);
+
+
   //延长质押
-  const startTime = depositSlip[2].toNumber();//质押时间
-  const depositDuration = depositSlip[3].toNumber();//质押周期
-  const currentTime = new Date().getTime()/1000;
-  const deadline = depositDuration * yitian.toNumber() + startTime
+  // const startTime = depositSlip[2].toNumber();//质押时间
+  // const depositDuration = depositSlip[3].toNumber();//质押周期
+  // const currentTime = new Date().getTime()/1000;
+  // const deadline = depositDuration * yitian.toNumber() + startTime
   // if(deadline < currentTime){//是否到期
   //   if((deadline + protectionPeriod.toNumber()) > currentTime){//是否在保护期内
-  //     const duration = BigNumber.from(10);
+  //     const duration = BigNumber.from(5);
   //     const extensionTx = await fiexdDeposit.connect(wallet).extension(duration);
   //     console.log('extensionTx:',extensionTx.hash);
   //   }else{
@@ -96,12 +113,12 @@ async function test(){
 
 
   //提现
-  if(deadline < currentTime){//是否到期
-    const withdrawTx = await fiexdDeposit.connect(wallet).withdraw();
-    console.log("withdrawTx:",withdrawTx.hash)
-  }else{
-    console.log('deadline:',deadline,'currentTime:',currentTime,"-----未到期")
-  }
+  // if(deadline < currentTime){//是否到期
+  //   const withdrawTx = await fiexdDeposit.connect(wallet).withdraw();
+  //   console.log("withdrawTx:",withdrawTx.hash)
+  // }else{
+  //   console.log('deadline:',deadline,'currentTime:',currentTime,"-----未到期")
+  // }
 
 
 

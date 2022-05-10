@@ -33,6 +33,7 @@ contract FiexdDeposit is Durations{
 
 
   mapping(address => DepositSlip) depositSlips;
+  mapping(address => RewardPool[]) rewardPools;
 
   struct DepositSlip{
     address user;
@@ -41,11 +42,26 @@ contract FiexdDeposit is Durations{
     uint256 duration;
     uint256 apr;
     uint256 reward;
+    bool isClaimed;
+  }
+
+  struct RewardPool{
+    uint256 startTime;
+    uint256 duration;
+    uint256 amount;
+    uint256 claimed;
+  }
+
+  struct LockReward{
+    uint256 lockAmount;
+    uint256 unlockAmount;
+    uint256 claimed;
   }
 
   event Deposit(address indexed user,uint256 amount,uint256 duration);
   event Extension(address indexed user,uint256 amount,uint256 duration);
   event Withdraw(address indexed user,uint256 amount,uint256 reward);
+  event Claim(address indexed user,uint256 amount);
 
 
 
@@ -88,6 +104,7 @@ contract FiexdDeposit is Durations{
     depositSlip.apr = apr;
     depositSlip.duration = duration;
     depositSlip.startTime = block.timestamp;
+    depositSlip.isClaimed = false;
     totalDeposit += amount;
     
     emit Deposit(depositSlip.user,amount,duration);
@@ -119,14 +136,16 @@ contract FiexdDeposit is Durations{
     require(deadline < block.timestamp,'deposit not due');
     //是否超过保护期
     require((block.timestamp - deadline) < protectionPeriod,'too late');
-    //计算奖励
-    _update(depositSlip);
-    //deposit
-
-    //把奖励加到本金
-    INeptune(depositToken).mint(address(this), depositSlip.reward);
-    totalDeposit +=depositSlip.reward;
-    depositSlip.balance += depositSlip.reward;
+   
+    //把奖励添加到奖池
+    if(!depositSlip.isClaimed){
+       //计算奖励
+      _update(depositSlip);
+      _addRewardPool(depositSlip.reward, depositSlip.duration, deadline);
+    }else{
+      depositSlip.isClaimed = false;
+    }
+    
     depositSlip.reward = 0;
     depositSlip.apr = apr;
     depositSlip.duration = duration;
@@ -135,6 +154,17 @@ contract FiexdDeposit is Durations{
     emit Extension(depositSlip.user, depositSlip.balance, depositSlip.duration);
   }
 
+  function _addRewardPool(uint256 reward,uint256 duration,uint256 deadline) internal {
+    reward -= reward * tradeFeeRate / 10000;
+    INeptune(depositToken).mint(address(this), reward);
+    RewardPool[] storage rewardPool = rewardPools[_msgSender()];
+    rewardPool.push(RewardPool({
+      amount: reward,
+      duration: duration,
+      startTime: deadline,
+      claimed: 0
+    }));
+  }
 
 
   function withdraw() external {
@@ -145,25 +175,105 @@ contract FiexdDeposit is Durations{
     require(deadline < block.timestamp,'deposit not due');
     //是否有余额
     require(depositSlip.balance > 0,'no balance');
-    //计算奖励
-    _update(depositSlip);
-
-    //计算手续费
+    
+    //把奖励添加到奖池
+    if(!depositSlip.isClaimed){
+      //计算奖励
+      _update(depositSlip);
+      _addRewardPool(depositSlip.reward, depositSlip.duration, deadline);
+      depositSlip.isClaimed = true;
+    }
     uint256 balance = depositSlip.balance;
     uint256 reward = depositSlip.reward;
-    if(reward > 0){
-      uint256 tradeFee = depositSlip.reward * tradeFeeRate / 10000;
-      reward -= tradeFee;
-    }
     
+    //提取本金
+    IERC20(depositToken).transfer(depositSlip.user, balance);
     //修改存款单
+    totalDeposit -= balance;
     depositSlip.balance = 0;
     depositSlip.reward = 0;
-    totalDeposit -= balance;
-    //提取奖励和本金
-    INeptune(depositToken).mint(depositSlip.user, reward);
-    IERC20(depositToken).transfer(depositSlip.user, balance);
+    
     emit Withdraw(depositSlip.user, balance, reward);
+  }
+
+  function claim() external {
+    DepositSlip storage depositSlip = depositSlips[_msgSender()];
+    //是否到期
+    uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
+    if(deadline < block.timestamp){
+      if(depositSlip.balance > 0){
+        if(!depositSlip.isClaimed){
+          _update(depositSlip);
+          _addRewardPool(depositSlip.reward, depositSlip.duration, deadline);
+          depositSlip.isClaimed = true;
+          depositSlip.reward = 0;
+        }
+      }
+    }
+
+
+    RewardPool[] storage rewardPool = rewardPools[_msgSender()];
+    uint256 claimAmount;
+    for(uint256 i; i < rewardPool.length; i++){
+      uint256 releaseAmount =_getReleaseReward(rewardPool[i]);
+      if(rewardPool[i].claimed < releaseAmount){
+        claimAmount += releaseAmount - rewardPool[i].claimed;
+        rewardPool[i].claimed = releaseAmount;
+      }
+    }
+
+    //当前质押奖励领取
+    require(claimAmount > 0, 'no rewards to claim');
+    IERC20(depositToken).transfer(_msgSender(), claimAmount);
+    
+    emit Claim(_msgSender(), claimAmount);
+  }
+
+  function _getReleaseReward(RewardPool memory rewardPool)internal view returns(uint256){
+    if(rewardPool.amount > rewardPool.claimed){
+      uint256 releaseTime = block.timestamp - rewardPool.startTime;
+      uint256 releaseDuration = releaseTime/yitian;
+      uint256 releaseAmount = rewardPool.amount * releaseDuration * 100 / rewardPool.duration ;
+      return (releaseAmount/100) >= rewardPool.amount ? rewardPool.amount : (releaseAmount/100);
+    }
+    return rewardPool.amount;
+  }
+
+
+  function viewLockReward(address user)external view returns(LockReward memory lockReward){
+    RewardPool[] memory rewardPool = rewardPools[user];
+
+    uint256 claimed;
+    uint256 lockAmount;
+    uint256 unlockAmount;
+    for(uint256 i; i < rewardPool.length; i++){
+      claimed += rewardPool[i].claimed;
+      if(rewardPool[i].amount > rewardPool[i].claimed){
+        uint256 releaseAmount = _getReleaseReward(rewardPool[i]);
+        
+        lockAmount += rewardPool[i].amount - releaseAmount;
+        unlockAmount += releaseAmount - rewardPool[i].claimed;
+      }
+    }
+
+    //查看当前质押的奖励是否能领取
+    DepositSlip memory depositSlip = depositSlips[user];
+    if(depositSlip.balance > 0){//存在当前质押
+      //是否到期
+      uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
+      if(deadline <= block.timestamp){//当前质押已到期
+        RewardPool memory newRewardPool = RewardPool({startTime: deadline,duration: depositSlip.duration,amount: _getReward(depositSlip),claimed: 0});
+        uint256 releaseAmount = _getReleaseReward(newRewardPool);
+        lockAmount += newRewardPool.amount - releaseAmount;
+        unlockAmount += releaseAmount;
+      }
+    }
+
+    lockReward = LockReward({
+      lockAmount: lockAmount,
+      unlockAmount: unlockAmount,
+      claimed: claimed
+    });
   }
 
 
@@ -200,17 +310,6 @@ contract FiexdDeposit is Durations{
     require(_yitian != yitian,'no change');
     yitian = _yitian;
   }
-
-
-
-
-
-
-
-
-
-
-
 
 }
 

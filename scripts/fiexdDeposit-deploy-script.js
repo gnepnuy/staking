@@ -14,9 +14,11 @@ async function main() {
     uint256 _endBlock,
     uint256[] memory _durations
    */
+
+  
   const depositToken = "0x56548eb590D2F67bE7F0395cadA3f4FffF6c730E";
   const apr = 50000;
-  const startBlock = "19148742";
+  const startBlock = "19177939";
   const endBlock = "19287973";
   const durations = ["30","180","360","10","5"];
 
