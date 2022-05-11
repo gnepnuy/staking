@@ -6,7 +6,7 @@ const IERC20Abi = require('../IERC20.json')
 
 //bsc_test
 const rpc_url = "https://data-seed-prebsc-2-s1.binance.org:8545/";
-const fiexdDeposit_address = "0x0f4Ce30383cFc1A9e75Bf42954a6fa36F6b11b42";
+const fiexdDeposit_address = "0x8B517154B9242519E70B63B9B1CC9ee9D0E40994";
 
 
 
@@ -57,6 +57,7 @@ async function test(){
   console.log("depositSlip.duration:",depositSlip.duration.toString());
   console.log("depositSlip.apr:",depositSlip.apr.toString());
   console.log("depositSlip.reward:",depositSlip.reward.toString());
+  console.log("depositSlip:",JSON.stringify(depositSlip));
 
 
   //获取单个周期的秒数
@@ -65,7 +66,7 @@ async function test(){
 
   //获取奖励解锁数据
   const lockReward = await fiexdDeposit.viewLockReward(wallet.address);
-  console.log("viewLockReward.lockAmount:",lockReward.lockAmount.toString());
+  console.log("viewLockReward.lockAmount  :",lockReward.lockAmount.toString());
   console.log("viewLockReward.unlockAmount:",lockReward.unlockAmount.toString());
   console.log("viewLockReward.claimed:",lockReward.claimed.toString());
 
@@ -90,15 +91,17 @@ async function test(){
   // }
 
   //领取已释放的奖励
-  const claimTx = await fiexdDeposit.connect(wallet).claim();
-  console.log("claimTx:",claimTx.hash);
+  // const claimTx = await fiexdDeposit.connect(wallet).claim();
+  // console.log("claimTx:",claimTx.hash);
 
+
+  const startTime = depositSlip[2].toNumber();//质押时间
+  const depositDuration = depositSlip[3].toNumber();//质押周期
+  const currentTime = new Date().getTime()/1000;
+  const deadline = depositDuration * yitian.toNumber() + startTime
 
   //延长质押
-  // const startTime = depositSlip[2].toNumber();//质押时间
-  // const depositDuration = depositSlip[3].toNumber();//质押周期
-  // const currentTime = new Date().getTime()/1000;
-  // const deadline = depositDuration * yitian.toNumber() + startTime
+  
   // if(deadline < currentTime){//是否到期
   //   if((deadline + protectionPeriod.toNumber()) > currentTime){//是否在保护期内
   //     const duration = BigNumber.from(5);

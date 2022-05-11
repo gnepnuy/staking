@@ -5,20 +5,13 @@ import './Durations.sol';
 import './IERC20.sol';
 import './INeptune.sol';
 
-/**
-  定期存款合约
-  1，固定收益率
-  2，到期后可以续存
-  3，存款会有时间窗口
-  4，提取收益将收取一定的手续费
 
- */
 contract FiexdDeposit is Durations{
 
   address public depositToken;
 
-  //当前年利率（50000/500%）
-  uint256 public apr;
+  
+  uint256 public apr;  //50000/500%
 
   uint256 public tradeFeeRate = 0;
 
@@ -119,7 +112,6 @@ contract FiexdDeposit is Durations{
   function _getReward(DepositSlip memory depositSlip) internal view returns (uint256 reward) {
     reward = 0;
     if(depositSlip.balance > 0){
-      //存在之前的质押，计算奖励
       uint256 rewardByDay = (depositSlip.balance * depositSlip.apr)/10000/365;
       uint256 depositDays = (block.timestamp - depositSlip.startTime)/yitian;
       depositDays = depositDays > depositSlip.duration ? depositSlip.duration : depositDays;
@@ -131,15 +123,11 @@ contract FiexdDeposit is Durations{
     require(durationContains(duration),'deadline param is error');
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
 
-    //是否到期
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
     require(deadline < block.timestamp,'deposit not due');
-    //是否超过保护期
     require((block.timestamp - deadline) < protectionPeriod,'too late');
    
-    //把奖励添加到奖池
     if(!depositSlip.isClaimed){
-       //计算奖励
       _update(depositSlip);
       _addRewardPool(depositSlip.reward, depositSlip.duration, deadline);
     }else{
@@ -170,15 +158,11 @@ contract FiexdDeposit is Durations{
   function withdraw() external {
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
 
-    //是否到期
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
     require(deadline < block.timestamp,'deposit not due');
-    //是否有余额
     require(depositSlip.balance > 0,'no balance');
     
-    //把奖励添加到奖池
     if(!depositSlip.isClaimed){
-      //计算奖励
       _update(depositSlip);
       _addRewardPool(depositSlip.reward, depositSlip.duration, deadline);
       depositSlip.isClaimed = true;
@@ -186,9 +170,7 @@ contract FiexdDeposit is Durations{
     uint256 balance = depositSlip.balance;
     uint256 reward = depositSlip.reward;
     
-    //提取本金
     IERC20(depositToken).transfer(depositSlip.user, balance);
-    //修改存款单
     totalDeposit -= balance;
     depositSlip.balance = 0;
     depositSlip.reward = 0;
@@ -198,7 +180,6 @@ contract FiexdDeposit is Durations{
 
   function claim() external {
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
-    //是否到期
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
     if(deadline < block.timestamp){
       if(depositSlip.balance > 0){
@@ -222,7 +203,6 @@ contract FiexdDeposit is Durations{
       }
     }
 
-    //当前质押奖励领取
     require(claimAmount > 0, 'no rewards to claim');
     IERC20(depositToken).transfer(_msgSender(), claimAmount);
     
@@ -256,12 +236,10 @@ contract FiexdDeposit is Durations{
       }
     }
 
-    //查看当前质押的奖励是否能领取
     DepositSlip memory depositSlip = depositSlips[user];
-    if(depositSlip.balance > 0){//存在当前质押
-      //是否到期
+    if(depositSlip.balance > 0){
       uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
-      if(deadline <= block.timestamp){//当前质押已到期
+      if(deadline <= block.timestamp){
         RewardPool memory newRewardPool = RewardPool({startTime: deadline,duration: depositSlip.duration,amount: _getReward(depositSlip),claimed: 0});
         uint256 releaseAmount = _getReleaseReward(newRewardPool);
         lockAmount += newRewardPool.amount - releaseAmount;
@@ -279,8 +257,10 @@ contract FiexdDeposit is Durations{
 
   function viewDepositSlip(address user) external view returns(DepositSlip memory){
     DepositSlip memory depositSlip = depositSlips[user];
-    depositSlip.reward += _getReward(depositSlip);
-
+    if(!depositSlip.isClaimed){
+      depositSlip.reward += _getReward(depositSlip);
+    }
+    
     return depositSlip;
   }
 
