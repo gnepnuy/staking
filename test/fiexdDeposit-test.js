@@ -6,7 +6,7 @@ const IERC20Abi = require('../IERC20.json')
 
 //bsc_test
 const rpc_url = "https://data-seed-prebsc-2-s1.binance.org:8545/";
-const fiexdDeposit_address = "0x8B517154B9242519E70B63B9B1CC9ee9D0E40994";
+const fiexdDeposit_address = "0x418069675843d4a87732C76176ea3c6F92c1A5F7";
 
 
 
@@ -57,7 +57,7 @@ async function test(){
   console.log("depositSlip.duration:",depositSlip.duration.toString());
   console.log("depositSlip.apr:",depositSlip.apr.toString());
   console.log("depositSlip.reward:",depositSlip.reward.toString());
-  console.log("depositSlip:",JSON.stringify(depositSlip));
+  // console.log("depositSlip:",JSON.stringify(depositSlip));
 
 
   //获取单个周期的秒数

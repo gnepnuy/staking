@@ -18,8 +18,8 @@ async function main() {
   
   const depositToken = "0x56548eb590D2F67bE7F0395cadA3f4FffF6c730E";
   const apr = 50000;
-  const startBlock = "19205540";
-  const endBlock = "19304367";
+  const startBlock = "19207763";
+  const endBlock = "19307763";
   const durations = ["30","180","360","10","5"];
 
 

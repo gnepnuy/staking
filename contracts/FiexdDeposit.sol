@@ -4,9 +4,11 @@ pragma solidity ^0.8.0;
 import './Durations.sol';
 import './IERC20.sol';
 import './INeptune.sol';
+import './ReentrancyGuard.sol';
 
 
-contract FiexdDeposit is Durations{
+
+contract FiexdDeposit is Durations,ReentrancyGuard{
 
   address public depositToken;
 
@@ -80,7 +82,7 @@ contract FiexdDeposit is Durations{
 
 
 
-  function deposit(uint256 amount,uint256 duration) external{
+  function deposit(uint256 amount,uint256 duration) nonReentrant external{
     require(startBlock <= block.number && endBlock >= block.number,'deposit not open');
     require(amount > 0,'amount error');
     require(durationContains(duration),'deadline param is error');
@@ -119,7 +121,7 @@ contract FiexdDeposit is Durations{
     }
   }
 
-  function extension(uint256 duration) external {
+  function extension(uint256 duration) nonReentrant external {
     require(durationContains(duration),'deadline param is error');
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
 
@@ -155,7 +157,7 @@ contract FiexdDeposit is Durations{
   }
 
 
-  function withdraw() external {
+  function withdraw() nonReentrant external {
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
 
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
@@ -178,7 +180,7 @@ contract FiexdDeposit is Durations{
     emit Withdraw(depositSlip.user, balance, reward);
   }
 
-  function claim() external {
+  function claim() nonReentrant external {
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
     if(deadline < block.timestamp){
@@ -237,7 +239,7 @@ contract FiexdDeposit is Durations{
     }
 
     DepositSlip memory depositSlip = depositSlips[user];
-    if(depositSlip.balance > 0){
+    if(depositSlip.balance > 0 && !depositSlip.isClaimed){
       uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
       if(deadline <= block.timestamp){
         RewardPool memory newRewardPool = RewardPool({startTime: deadline,duration: depositSlip.duration,amount: _getReward(depositSlip),claimed: 0});
