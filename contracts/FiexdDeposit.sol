@@ -10,7 +10,7 @@ import './ReentrancyGuard.sol';
 
 contract FiexdDeposit is Durations,ReentrancyGuard{
 
-  address public depositToken;
+  address immutable public depositToken;
 
   
   uint256 public apr;  //50000/500%
@@ -172,7 +172,7 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     uint256 balance = depositSlip.balance;
     uint256 reward = depositSlip.reward;
     
-    IERC20(depositToken).transfer(depositSlip.user, balance);
+    IERC20(depositToken).transfer(_msgSender(), balance);
     totalDeposit -= balance;
     depositSlip.balance = 0;
     depositSlip.reward = 0;

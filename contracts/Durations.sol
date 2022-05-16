@@ -12,17 +12,19 @@ contract Durations is Ownable{
 
 
 
-  function addDurations(uint256[] memory durations) external onlyOwner{
-    _add(durations);
+  function addDurations(uint256[] calldata durations) external onlyOwner{
+    for(uint256 i;i < durations.length;i++){
+      values.add(durations[i]);
+    }
   }
-
+  
   function _add(uint256[] memory durations) internal {
     for(uint256 i;i < durations.length;i++){
       values.add(durations[i]);
     }
   }
 
-  function removeDurations(uint256[] memory durations) external onlyOwner{
+  function removeDurations(uint256[] calldata durations) external onlyOwner{
     for(uint256 i;i < durations.length;i++){
       values.remove(durations[i]);
     }
