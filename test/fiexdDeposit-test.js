@@ -6,7 +6,10 @@ const IERC20Abi = require('../IERC20.json')
 
 //bsc_test
 const rpc_url = "https://data-seed-prebsc-2-s1.binance.org:8545/";
-const fiexdDeposit_address = "0x418069675843d4a87732C76176ea3c6F92c1A5F7";
+// const fiexdDeposit_address = "0x418069675843d4a87732C76176ea3c6F92c1A5F7";
+const fiexdDeposit_address = "0x9c13e1d75d6aD5507F01EE11e33fBe5910f45BF9";//v2
+
+
 
 
 
@@ -72,27 +75,30 @@ async function test(){
 
 
   //质押/增加质押
-  // let deposiToken = new ethers.Contract(depositToken,IERC20Abi.abi,provider);
-  // const allowance = await deposiToken.allowance(wallet.address,fiexdDeposit_address);//查询授权额度
+  let deposiToken = new ethers.Contract(depositToken,IERC20Abi.abi,provider);
+  const allowance = await deposiToken.allowance(wallet.address,fiexdDeposit_address);//查询授权额度
 
-  // const blockNumber = await provider.getBlockNumber();//当前区块
-  // if(blockNumber > startBlock && blockNumber < endBlock){//当前是否开放质押
-  //   console.log('blocknumber:',blockNumber);
-  //   const amount = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));//质押数量
-  //   const duration = BigNumber.from(5);//质押周期
-  //   if(amount.lte(allowance)){
-  //     const depositTx = await fiexdDeposit.connect(wallet).deposit(amount,duration);
-  //     console.log('depositTx:',depositTx.hash);
-  //   }else{//未授权或者额度不够，去授权
-  //     const amount = BigNumber.from(100000000000).mul(BigNumber.from(10).pow(18));
-  //     const approveTx = await deposiToken.connect(wallet).approve(fiexdDeposit_address,amount);
-  //     console.log("approveTx:",approveTx.hash);
-  //   }
-  // }
+  const blockNumber = await provider.getBlockNumber();//当前区块
+  if(blockNumber > startBlock && blockNumber < endBlock){//当前是否开放质押
+    console.log('blocknumber:',blockNumber);
+    const amount = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));//质押数量
+    const duration = BigNumber.from(5);//质押周期
+    if(amount.lte(allowance)){
+      const depositTokenBalance = await deposiToken.balanceOf(wallet.address);//用户质押代币余额
+      if(depositTokenBalance >= amount){
+        const depositTx = await fiexdDeposit.connect(wallet).deposit(amount,duration);
+        console.log('depositTx:',depositTx.hash);
+      }
+    }else{//未授权或者额度不够，去授权
+      const amount = BigNumber.from(100000000000).mul(BigNumber.from(10).pow(18));
+      const approveTx = await deposiToken.connect(wallet).approve(fiexdDeposit_address,amount);
+      console.log("approveTx:",approveTx.hash);
+    }
+  }
 
   //领取已释放的奖励
-  // const claimTx = await fiexdDeposit.connect(wallet).claim();
-  // console.log("claimTx:",claimTx.hash);
+  const claimTx = await fiexdDeposit.connect(wallet).claim();
+  console.log("claimTx:",claimTx.hash);
 
 
   const startTime = depositSlip[2].toNumber();//质押时间
