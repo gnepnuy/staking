@@ -26,9 +26,12 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
 
   uint256 public totalDeposit;
 
+  uint8 public constant extensionCountLimit = 2;
+
 
   mapping(address => DepositSlip) depositSlips;
   mapping(address => RewardPool[]) rewardPools;
+  mapping(address => uint8) extensionCount;
 
   struct DepositSlip{
     address user;
@@ -112,7 +115,6 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
   }
 
   function _getReward(DepositSlip memory depositSlip) internal view returns (uint256 reward) {
-    reward = 0;
     if(depositSlip.balance > 0){
       uint256 rewardByDay = (depositSlip.balance * depositSlip.apr)/10000/365;
       uint256 depositDays = (block.timestamp - depositSlip.startTime)/yitian;
@@ -123,6 +125,7 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
 
   function extension(uint256 duration) nonReentrant external {
     require(durationContains(duration),'deadline param is error');
+    require(extensionCount[_msgSender()] < extensionCountLimit,'out of extension count');
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
 
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
@@ -140,6 +143,8 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     depositSlip.apr = apr;
     depositSlip.duration = duration;
     depositSlip.startTime = block.timestamp;
+
+    extensionCount[_msgSender()] += 1;
 
     emit Extension(depositSlip.user, depositSlip.balance, depositSlip.duration);
   }
@@ -265,6 +270,10 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     
     return depositSlip;
   }
+
+  function viewUserExtensionCount(address user) external view returns(uint8){
+    return extensionCount[user];
+  } 
 
 
   function updateApr(uint256 _apr) external onlyOwner{
