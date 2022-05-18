@@ -90,7 +90,10 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     require(amount > 0,'amount error');
     require(durationContains(duration),'deadline param is error');
     DepositSlip storage depositSlip =  depositSlips[_msgSender()];
-    _update(depositSlip);
+    if(!depositSlip.isClaimed){
+      _update(depositSlip);
+    }
+    
 
     uint256 beforeBalance = IERC20(depositToken).balanceOf(address(this));
     IERC20(depositToken).transferFrom(_msgSender(), address(this), amount);
@@ -127,6 +130,8 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     require(durationContains(duration),'deadline param is error');
     require(extensionCount[_msgSender()] < extensionCountLimit,'out of extension count');
     DepositSlip storage depositSlip = depositSlips[_msgSender()];
+    require(depositSlip.balance > 0,'no balance');
+
 
     uint256 deadline = (depositSlip.duration * yitian)+depositSlip.startTime;
     require(deadline < block.timestamp,'deposit not due');

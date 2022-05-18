@@ -8,7 +8,7 @@ const IERC20Abi = require('../IERC20.json')
 const rpc_url = "https://data-seed-prebsc-2-s1.binance.org:8545/";
 // const fiexdDeposit_address = "0x418069675843d4a87732C76176ea3c6F92c1A5F7";
 // const fiexdDeposit_address = "0x9c13e1d75d6aD5507F01EE11e33fBe5910f45BF9";//v2
-const fiexdDeposit_address = "0x12ef6d1464dc3dbB2c1e61f6BA0Ff5Fafcb5B75D";//v3
+const fiexdDeposit_address = "0xb86D9AE2fDaB28f0f12f635323B2230535Bc5747";//v3
 
 
 
@@ -106,8 +106,8 @@ async function test(){
   // }
 
   //领取已释放的奖励
-  const claimTx = await fiexdDeposit.connect(wallet).claim();
-  console.log("claimTx:",claimTx.hash);
+  // const claimTx = await fiexdDeposit.connect(wallet).claim();
+  // console.log("claimTx:",claimTx.hash);
 
 
   const startTime = depositSlip[2].toNumber();//质押时间
@@ -117,17 +117,17 @@ async function test(){
 
   //延长质押
   
-  // if(deadline < currentTime){//是否到期
-  //   if((deadline + protectionPeriod.toNumber()) > currentTime){//是否在保护期内
-  //     const duration = BigNumber.from(5);
-  //     const extensionTx = await fiexdDeposit.connect(wallet).extension(duration);
-  //     console.log('extensionTx:',extensionTx.hash);
-  //   }else{
-  //     console.log('------超过保护期了')
-  //   }
-  // }else{
-  //   console.log('deadline:',deadline,'currentTime:',currentTime,"-----未到期")
-  // }
+  if(deadline < currentTime){//是否到期
+    if((deadline + protectionPeriod.toNumber()) > currentTime){//是否在保护期内
+      const duration = BigNumber.from(5);
+      const extensionTx = await fiexdDeposit.connect(wallet).extension(duration);
+      console.log('extensionTx:',extensionTx.hash);
+    }else{
+      console.log('------超过保护期了')
+    }
+  }else{
+    console.log('deadline:',deadline,'currentTime:',currentTime,"-----未到期")
+  }
 
 
   //提现
