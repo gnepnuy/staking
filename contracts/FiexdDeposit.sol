@@ -29,6 +29,7 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
   uint8 public constant extensionCountLimit = 2;
 
 
+
   mapping(address => DepositSlip) depositSlips;
   mapping(address => RewardPool[]) rewardPools;
   mapping(address => uint8) extensionCount;
@@ -100,7 +101,7 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     uint256 afterBalance = IERC20(depositToken).balanceOf(address(this));
     amount = afterBalance - beforeBalance;
     
-    depositSlip.balance += amount;
+    depositSlip.balance += amount;  
     depositSlip.user = _msgSender();
     depositSlip.apr = apr;
     depositSlip.duration = duration;
@@ -145,7 +146,8 @@ contract FiexdDeposit is Durations,ReentrancyGuard{
     }
     
     depositSlip.reward = 0;
-    depositSlip.apr = apr;
+
+    depositSlip.apr = apr - ((extensionCount[_msgSender()] + 1) * 10000);
     depositSlip.duration = duration;
     depositSlip.startTime = block.timestamp;
 

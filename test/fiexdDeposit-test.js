@@ -8,7 +8,8 @@ const IERC20Abi = require('../IERC20.json')
 const rpc_url = "https://data-seed-prebsc-2-s1.binance.org:8545/";
 // const fiexdDeposit_address = "0x418069675843d4a87732C76176ea3c6F92c1A5F7";
 // const fiexdDeposit_address = "0x9c13e1d75d6aD5507F01EE11e33fBe5910f45BF9";//v2
-const fiexdDeposit_address = "0xb86D9AE2fDaB28f0f12f635323B2230535Bc5747";//v3
+// const fiexdDeposit_address = "0xb86D9AE2fDaB28f0f12f635323B2230535Bc5747";//v3  
+const fiexdDeposit_address = "0xF1AF3dcf981201C92D398BC5dDFD78b2C6Cce6a1";
 
 
 
